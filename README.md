@@ -36,6 +36,12 @@ Built by **Ehtisham** and **Ali Raza**.
 - Receiving puts the goods into stores and updates each product's average cost.
 - First in, first out: for every received container you can see how much is left and what profit it made.
 
+**Delivery**
+- Our own staff take bills to customers. A sale with delivery "Delivery" waits on the Delivery screen until the store keeper sends it out on a trip with one staff member.
+- The time out and time back are stamped by the database, nobody types them. A delivery slip is printed for the customer to sign.
+- When the staff member is back, a manager closes the trip: each bill is delivered or came back (back to waiting), and any cash collected becomes a receipt in that customer's account with the staff member's name on it.
+- Dashboard shows bills still waiting (red if from an earlier day) and trips out for more than 4 hours. History shows trips, deliveries and cash per staff member.
+
 **Everything else**
 - Dashboard (whole business for admin / manager, own sales for cashiers, stock only for store keepers).
 - Four roles, users and passwords managed by the admin.
@@ -53,6 +59,8 @@ Built by **Ehtisham** and **Ali Raza**.
 | Products | yes | yes | view | view |
 | Stock in / out / transfer | yes | yes | no | yes |
 | Containers | yes | yes | no | view + receive, no prices |
+| Delivery: send bills out | yes | yes | no | yes |
+| Delivery: close trip, cash, staff list | yes | yes | no | no |
 | Cost price, landed cost, profit | yes | yes | no | no |
 | Delete anything | yes | no | no | no |
 | Users, settings | yes | no | no | no |
@@ -120,10 +128,11 @@ Everything is in `backend/supabase/`. The short version (details in `backend/sup
 | `upgrade_005_returns_against_invoice.sql` | Returns linked to the sale invoice |
 | `upgrade_006_container_lots.sql` | What is left of each container, and its profit |
 | `upgrade_007_item_supplier.sql` | Supplier per packing list line |
+| `upgrade_008_delivery.sql` | Delivery staff, trips, cash collected on delivery |
 
 Run the upgrades **before** deploying the code that needs them. If the code goes first you'll see errors like *"Could not find the table 'public.container_stock'"*.
 
-When you add a new upgrade: take the next number (008), make it safe to run again (`if not exists`, `create or replace`, `drop policy if exists`), put the same change in `setup.sql`, and add a row to both tables.
+When you add a new upgrade: take the next number (009), make it safe to run again (`if not exists`, `create or replace`, `drop policy if exists`), put the same change in `setup.sql`, and add a row to both tables.
 
 To continue invoice numbers from the old software (say the last bill there was 14137):
 
@@ -177,6 +186,7 @@ frontend/                 the React app (website + staff software)
       products/           products, product ledger, CSV import
       stock/              stock screen, stock in / out / transfer
       containers/         containers, suppliers, receiving, landed cost
+      delivery/           delivery trips, staff, delivery slip
       users/              users and passwords, my profile
       dashboard/
       settings/

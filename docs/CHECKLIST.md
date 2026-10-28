@@ -110,6 +110,12 @@ Legend: `[x]` done · `[ ]` pending · **(client)** waiting for client decision
   - Existing databases: run `backend/supabase/migrations/upgrade_006_container_lots.sql` once (after 004 containers)
 - [x] Mixed containers: supplier per packing list line (blank = container's supplier / agent); CSV `supplier` column
   - Existing databases: run `backend/supabase/migrations/upgrade_007_item_supplier.sql` once
+- [x] Delivery trips (built 28 Oct 2026): own staff take bills to customers
+  - Pending list of delivery bills, trip = one staff member + several bills, time out / back stamped by the database
+  - Delivery slip with customer signature column; manager closes the trip (delivered / came back) and enters cash, which becomes a receipt
+  - Store keeper sends trips, manager / admin closes, cancels and manages staff; cashier sees the delivery line on the bill
+  - Dashboard: bills waiting (red from earlier days), trips out over 4 hours; history per staff member
+  - Existing databases: run `backend/supabase/migrations/upgrade_008_delivery.sql` once
 - [ ] Supplier ledger, payments (A-02, A-04)
 - [ ] Local purchase invoice (PI-01), purchase return **(client)**
 - [ ] Profit report, container report (R-07, R-10)
@@ -134,5 +140,7 @@ Legend: `[x]` done · `[ ]` pending · **(client)** waiting for client decision
   - [ ] `upgrade_005_returns_against_invoice.sql`
   - [ ] `upgrade_006_container_lots.sql`
   - [ ] `upgrade_007_item_supplier.sql`
+  - [ ] `upgrade_008_delivery.sql`
+- [ ] Add delivery staff names (Delivery > Delivery staff)
 - [ ] Deploy `admin-users` Edge Function (needed for the new roles)
 - [ ] Parallel run + staff training (M-03, M-04)

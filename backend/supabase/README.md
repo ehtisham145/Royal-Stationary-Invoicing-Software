@@ -14,6 +14,7 @@ Run the upgrades in `migrations/` **in number order, each once**. Every file is 
 | 005 | `migrations/upgrade_005_returns_against_invoice.sql` | Returns linked to the sale invoice |
 | 006 | `migrations/upgrade_006_container_lots.sql` | What is left of each container and its profit |
 | 007 | `migrations/upgrade_007_item_supplier.sql` | A supplier per packing list line |
+| 008 | `migrations/upgrade_008_delivery.sql` | Delivery staff and trips: who took which bills, when, and cash collected |
 
 Run the upgrades **before** deploying the frontend that needs them.
 
@@ -26,7 +27,8 @@ select
   exists (select 1 from information_schema.tables  where table_name = 'containers')                     as "004",
   exists (select 1 from information_schema.columns where table_name = 'invoice_items' and column_name = 'return_of_item') as "005",
   exists (select 1 from information_schema.views   where table_name = 'container_stock')                as "006",
-  exists (select 1 from information_schema.columns where table_name = 'container_items' and column_name = 'supplier_id') as "007";
+  exists (select 1 from information_schema.columns where table_name = 'container_items' and column_name = 'supplier_id') as "007",
+  exists (select 1 from information_schema.tables  where table_name = 'delivery_trips')                 as "008";
 ```
 Run only the files that show `false`.
 
