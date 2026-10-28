@@ -113,6 +113,31 @@ export const CONTAINER_STATUSES = [
 export const ON_THE_WAY = ['shipped', 'at_port', 'clearing']
 export const CURRENCIES = ['USD', 'RMB', 'PKR']
 
+// Delivery bills: where the goods are. Bills made before delivery tracking have no status.
+export const DELIVERY_STATUSES = {
+  pending: { label: 'Waiting for delivery', tone: 'status-warning' },
+  out: { label: 'Out for delivery', tone: 'status-info' },
+  delivered: { label: 'Delivered', tone: 'status-good' },
+  picked_up: { label: 'Picked up at shop', tone: 'status-good' },
+}
+// A bill on one trip
+export const TRIP_LINE_LABELS = { out: 'Out', delivered: 'Delivered', returned: 'Came back' }
+
+// "28 Oct, 11:20 am"; today's times show the time only
+export function timeText(ts) {
+  if (!ts) return ''
+  const d = new Date(ts)
+  const time = d.toLocaleTimeString('en-GB', { hour: 'numeric', minute: '2-digit', hour12: true })
+  return toISODate(d) === today() ? time : `${d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}, ${time}`
+}
+
+// Milliseconds as "2 hr 15 min" / "40 min"
+export function durationText(ms) {
+  const mins = Math.max(0, Math.round(ms / 60000))
+  const h = Math.floor(mins / 60)
+  return h ? `${h} hr${mins % 60 ? ` ${mins % 60} min` : ''}` : `${mins} min`
+}
+
 // Preview only - the database recalculates these when saving.
 export function computeInvoice(items, discount, freight) {
   const subtotal = round2(

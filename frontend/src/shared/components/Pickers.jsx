@@ -1,4 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { ChevronDown, Search, X } from 'lucide-react'
 import { matchesWords } from '../lib/search'
 import { money, qtyText } from '../lib/format'
@@ -104,7 +105,7 @@ const SearchBox = forwardRef(function SearchBox({ items, filter, render, onPick,
         )}
       </div>
       {open && (q.trim() || browse) && (
-        <ul className="searchbox-list" ref={listRef} role="listbox">
+        <FloatingList anchor={inputRef} listRef={listRef}>
           {results.map((it, i) => (
             <li key={it.id} role="option" aria-selected={i === active}>
               <button
@@ -124,11 +125,60 @@ const SearchBox = forwardRef(function SearchBox({ items, filter, render, onPick,
               Showing {results.length} of {total}. Type to narrow down.
             </li>
           )}
-        </ul>
+        </FloatingList>
       )}
     </div>
   )
 })
+
+// Four rows and the top of the fifth (so it is clear the list scrolls)
+const LIST_MAX_HEIGHT = 250
+const GAP = 4
+const EDGE = 8
+
+// The results list is drawn on top of the page (portal), not inside the card, table or modal that holds the
+// input, so their edges cannot cut it off. It opens below the input, or above when there is more room there,
+// and follows the input when the page scrolls or the window is resized.
+function FloatingList({ anchor, listRef, children }) {
+  const [style, setStyle] = useState(null)
+
+  useLayoutEffect(() => {
+    function place() {
+      const el = anchor.current?.closest('.input-icon') ?? anchor.current
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      const below = window.innerHeight - r.bottom - GAP - EDGE
+      const above = r.top - GAP - EDGE
+      const up = below < Math.min(LIST_MAX_HEIGHT, 180) && above > below
+      setStyle({
+        left: r.left,
+        width: r.width,
+        maxHeight: Math.max(120, Math.min(LIST_MAX_HEIGHT, up ? above : below)),
+        ...(up ? { bottom: window.innerHeight - r.top + GAP } : { top: r.bottom + GAP }),
+      })
+    }
+    place()
+    window.addEventListener('resize', place)
+    window.addEventListener('scroll', place, true) // true: also when a card or modal scrolls
+    return () => {
+      window.removeEventListener('resize', place)
+      window.removeEventListener('scroll', place, true)
+    }
+  }, [anchor])
+
+  return createPortal(
+    <ul
+      className="searchbox-list"
+      ref={listRef}
+      role="listbox"
+      style={style ?? { visibility: 'hidden' }}
+      onMouseDown={(e) => e.preventDefault()} // keep focus in the input (scrollbar clicks too)
+    >
+      {children}
+    </ul>,
+    document.body,
+  )
+}
 
 const productFilter = (p, q) => p.active !== false && matchesWords(q, p.code, p.name, p.company, p.brand, p.category)
 

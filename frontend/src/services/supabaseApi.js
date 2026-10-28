@@ -10,6 +10,7 @@ function unwrap({ data, error }) {
       if (/locations_name/i.test(error.message)) throw new Error('A store with this name already exists.')
       if (/containers_no/i.test(error.message)) throw new Error('A container with this number already exists.')
       if (/suppliers_name/i.test(error.message)) throw new Error('A supplier with this name already exists.')
+      if (/delivery_staff_name/i.test(error.message)) throw new Error('A staff member with this name already exists.')
       throw new Error('This record already exists.')
     }
     if (error.code === '23503' && /return_of/i.test(error.message)) throw new Error('This invoice has returns against it. Delete those returns first.')
@@ -506,6 +507,68 @@ export async function getProductContainers(productId) {
       .eq('product_id', productId),
   )
   return rows.filter((r) => r.containers).sort((a, b) => (b.containers.order_date ?? '').localeCompare(a.containers.order_date ?? ''))
+}
+
+// ---------- Delivery (needs upgrade_008_delivery.sql) ----------
+// Store keepers cannot read invoices, so bills on trips come from security definer functions
+// (delivery_board, delivery_trips) that return only what a delivery needs.
+
+export async function listDeliveryStaff() {
+  return unwrap(await supabase.from('delivery_staff').select('*').order('name'))
+}
+
+export async function saveDeliveryStaff({ name, phone, active }, id) {
+  const row = { name: String(name ?? '').trim(), phone: String(phone ?? '').trim() || null, active: active ?? true }
+  if (id) return unwrap(await supabase.from('delivery_staff').update(row).eq('id', id).select().single())
+  return unwrap(await supabase.from('delivery_staff').insert(row).select().single())
+}
+
+export async function deleteDeliveryStaff(id) {
+  return unwrap(await supabase.from('delivery_staff').delete().eq('id', id))
+}
+
+// { pending: [bills waiting for a trip], trips: [trips that are out] }
+export async function getDeliveryBoard() {
+  return unwrap(await supabase.rpc('delivery_board'))
+}
+
+// Trips that went out between two moments (ISO timestamps), newest first
+export async function listTrips({ from, to }) {
+  return unwrap(await supabase.rpc('delivery_trips', { p_from: from || null, p_to: to || null }))
+}
+
+export async function getTrip(id) {
+  const rows = unwrap(await supabase.rpc('delivery_trips', { p_trip_id: id }))
+  if (!rows.length) throw new Error('Trip not found.')
+  return rows[0]
+}
+
+export async function startTrip({ staffId, invoiceIds, vehicle, notes }) {
+  return unwrap(await supabase.rpc('start_trip', { p_staff_id: staffId, p_invoice_ids: invoiceIds, p_vehicle: vehicle || null, p_notes: notes || null }))
+}
+
+// lines: [{ invoice_id, status: 'delivered' | 'returned', cash }]
+export async function closeTrip(id, lines) {
+  return unwrap(await supabase.rpc('close_trip', { p_trip_id: id, p_lines: lines }))
+}
+
+export async function cancelTrip(id) {
+  return unwrap(await supabase.rpc('cancel_trip', { p_trip_id: id }))
+}
+
+export async function markPickedUp(invoiceId) {
+  return unwrap(await supabase.rpc('mark_picked_up', { p_invoice_id: invoiceId }))
+}
+
+// The trips one bill went on, oldest first (shown on the invoice)
+export async function getInvoiceTrips(invoiceId) {
+  const rows = unwrap(
+    await supabase
+      .from('delivery_trip_invoices')
+      .select('status, cash, delivery_trips(id, trip_no, status, out_at, back_at, delivery_staff(name))')
+      .eq('invoice_id', invoiceId),
+  )
+  return rows.filter((r) => r.delivery_trips).sort((a, b) => a.delivery_trips.out_at.localeCompare(b.delivery_trips.out_at))
 }
 
 // ---------- Dashboard ----------

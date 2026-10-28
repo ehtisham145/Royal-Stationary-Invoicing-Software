@@ -29,6 +29,8 @@ import ContainerForm from '../features/containers/ContainerForm'
 import ContainerReceive from '../features/containers/ContainerReceive'
 import Settings from '../features/settings/Settings'
 import Profile from '../features/users/Profile'
+import Delivery from '../features/delivery/Delivery'
+import TripSlip from '../features/delivery/TripSlip'
 
 const only = (permission, el) => <RequireAuth permission={permission}>{el}</RequireAuth>
 
@@ -97,6 +99,8 @@ export default function App() {
           <Route path="containers/:id" element={only('containers.view', <ContainerForm />)} />
           <Route path="containers/:id/receive" element={only('containers.receive', <ContainerReceive />)} />
           <Route path="suppliers" element={only('containers.manage', <Suppliers />)} />
+          <Route path="delivery" element={only('delivery', <Delivery />)} />
+          <Route path="delivery/trips/:id" element={only('delivery', <TripSlip />)} />
           <Route path="users" element={only('users', <Users />)} />
           <Route path="settings" element={only('settings', <Settings />)} />
           <Route path="profile" element={<Profile />} />

@@ -1,8 +1,18 @@
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, Plus, Printer, RotateCcw, Trash2 } from 'lucide-react'
-import { deleteInvoice, getChequeImageUrl, getInvoice } from '../../services/api'
-import { DELIVERY_LABELS, PAYMENT_LABELS, formatDate, money, num, qtyText } from '../../shared/lib/format'
+import { ArrowLeft, Plus, Printer, RotateCcw, Trash2, Truck } from 'lucide-react'
+import { deleteInvoice, getChequeImageUrl, getInvoice, getInvoiceTrips, optional } from '../../services/api'
+import {
+  DELIVERY_LABELS,
+  DELIVERY_STATUSES,
+  PAYMENT_LABELS,
+  TRIP_LINE_LABELS,
+  formatDate,
+  money,
+  num,
+  qtyText,
+  timeText,
+} from '../../shared/lib/format'
 import { customerLabel } from '../../shared/lib/customerFields'
 import { ErrorBanner, Loading, TxnBadge } from '../../shared/components/ui'
 import { useAuth } from '../../app/auth/AuthProvider'
@@ -24,11 +34,17 @@ export default function InvoiceDetail() {
   const [busy, setBusy] = useState(false)
   const [layout, setLayout] = useState('normal')
   const [chequeUrl, setChequeUrl] = useState('')
+  const [trips, setTrips] = useState([])
 
   useEffect(() => {
     setDoc(null)
     getInvoice(id).then(setDoc).catch((e) => setError(e.message))
   }, [id])
+
+  useEffect(() => {
+    setTrips([])
+    if (doc?.delivery_status) optional(getInvoiceTrips(doc.id), []).then(setTrips)
+  }, [doc?.id, doc?.delivery_status])
 
   useEffect(() => {
     setChequeUrl('')
@@ -101,6 +117,7 @@ export default function InvoiceDetail() {
               ))}
             </p>
           )}
+          {DELIVERY_STATUSES[doc.delivery_status] && <DeliveryLine status={doc.delivery_status} trips={trips} canOpen={can('delivery')} />}
         </div>
         <div className="page-actions">
           {canDelete && (
@@ -313,5 +330,36 @@ export default function InvoiceDetail() {
         </footer>
       </article>
     </>
+  )
+}
+
+// Delivery bills: where the goods are, and every trip the bill went on
+function DeliveryLine({ status, trips, canOpen }) {
+  const s = DELIVERY_STATUSES[status]
+  return (
+    <div className="delivery-line">
+      <span className={`status ${s.tone}`}>
+        <Truck size={13} strokeWidth={2.2} />
+        {s.label}
+      </span>
+      {trips.map(({ status: lineStatus, cash, delivery_trips: t }) => {
+        const label = `Trip ${t.trip_no}`
+        return (
+          <span key={t.id} className="text-secondary">
+            {canOpen ? (
+              <Link to={`/app/delivery/trips/${t.id}`} className="link">
+                {label}
+              </Link>
+            ) : (
+              label
+            )}
+            : {t.delivery_staff?.name}, left {timeText(t.out_at)}
+            {t.back_at && `, back ${timeText(t.back_at)}`}
+            {lineStatus !== 'out' && ` · ${TRIP_LINE_LABELS[lineStatus]}`}
+            {Number(cash) > 0 && ` · cash ${money(cash)}`}
+          </span>
+        )
+      })}
+    </div>
   )
 }

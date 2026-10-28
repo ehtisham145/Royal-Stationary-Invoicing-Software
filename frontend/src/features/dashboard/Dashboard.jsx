@@ -16,10 +16,12 @@ import {
   Plus,
   ReceiptText,
   Ship,
+  Truck,
   Users,
   Wallet,
 } from 'lucide-react'
-import { getDashboard } from '../../services/api'
+import { getDashboard, getDeliveryBoard, optional } from '../../services/api'
+import { LATE_TRIP_HOURS, boardSummary } from '../delivery/deliveryUtils'
 import { compactMoney, formatDate, money, num, qtyText } from '../../shared/lib/format'
 import { EmptyState, ErrorBanner, Loading, PageHeader, TxnBadge } from '../../shared/components/ui'
 import { useAuth } from '../../app/auth/AuthProvider'
@@ -161,11 +163,49 @@ function AdminDashboard() {
   )
 }
 
+// Bills waiting for delivery and trips that are out (roles with 'delivery'; quiet if upgrade 008 is missing)
+function useDeliverySummary() {
+  const { can } = useAuth()
+  const allowed = can('delivery')
+  const [summary, setSummary] = useState(null)
+  useEffect(() => {
+    if (allowed) optional(getDeliveryBoard(), null).then((b) => b?.pending && setSummary(boardSummary(b)))
+  }, [allowed])
+  return summary
+}
+
+function DeliveryAlerts() {
+  const d = useDeliverySummary()
+  if (!d || (d.pending <= 0 && d.out <= 0)) return null
+  return (
+    <>
+      {d.pending > 0 && (
+        <Link to="/app/delivery" className={`dash-alert ${d.oldPending ? 'critical' : 'warn'}`}>
+          <Truck size={17} />
+          <span>
+            <b>{num(d.pending)}</b> bill{d.pending === 1 ? '' : 's'} waiting for delivery
+            {d.oldPending > 0 && ` · ${num(d.oldPending)} from earlier days`}
+          </span>
+        </Link>
+      )}
+      {d.out > 0 && (
+        <Link to="/app/delivery" className={`dash-alert ${d.late ? 'critical' : 'info'}`}>
+          <Truck size={17} />
+          <span>
+            <b>{num(d.out)}</b> delivery trip{d.out === 1 ? '' : 's'} out
+            {d.late > 0 && ` · ${num(d.late)} over ${LATE_TRIP_HOURS} hours`}
+          </span>
+        </Link>
+      )}
+    </>
+  )
+}
+
 function StockAlerts({ data }) {
   const way = data.containers?.on_the_way ?? 0
-  if (data.low_stock_count <= 0 && data.negative_count <= 0 && way <= 0) return null
   return (
     <div className="alert-row">
+      <DeliveryAlerts />
       {way > 0 && (
         <Link to="/app/containers" className="dash-alert info">
           <Ship size={17} />
@@ -576,6 +616,7 @@ function StoreDashboard() {
                   <QuickAction to="/app/stock/new?kind=in" icon={PackagePlus} title="Stock in" text="Goods received into a store" />
                   <QuickAction to="/app/stock/new?kind=out" icon={PackageMinus} title="Stock out" text="Goods taken out of a store" />
                   <QuickAction to="/app/stock/new?kind=transfer" icon={ArrowLeftRight} title="Transfer" text="Move goods between stores" />
+                  <QuickAction to="/app/delivery" icon={Truck} title="Delivery" text="Send bills out with our staff" />
                 </div>
               </div>
               <StoreSummary rows={data.locations} />

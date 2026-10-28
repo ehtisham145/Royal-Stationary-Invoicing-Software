@@ -13,6 +13,7 @@ import {
   Settings as SettingsIcon,
   ShieldCheck,
   Ship,
+  Truck,
   UserRound,
   Users,
   X,
@@ -37,6 +38,7 @@ const NAV = [
       { to: '/app/products', label: 'Products', icon: Package },
       { to: '/app/stock', label: 'Stock', icon: Boxes, end: true },
       { to: '/app/stock/entries', label: 'Stock entries', icon: ArrowLeftRight, permission: 'stock.manage' },
+      { to: '/app/delivery', label: 'Delivery', icon: Truck, permission: 'delivery' },
     ],
   },
   {

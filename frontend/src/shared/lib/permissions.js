@@ -21,7 +21,7 @@ export const ROLES = [
   {
     value: 'storekeeper',
     label: 'Store keeper',
-    text: 'Stock in, stock out, transfers and receiving containers. No prices, sales or customer accounts.',
+    text: 'Stock in, stock out, transfers, receiving containers and sending deliveries. No prices, sales or customer accounts.',
   },
 ]
 
@@ -38,6 +38,8 @@ const PERMISSIONS = {
   'containers.view': ['admin', 'manager', 'storekeeper'], // containers and packing lists (no prices)
   'containers.manage': ['admin', 'manager'], // create and edit containers and suppliers
   'containers.receive': ['admin', 'manager', 'storekeeper'], // receive a container into stores
+  delivery: ['admin', 'manager', 'storekeeper'], // see bills waiting for delivery, send them out on a trip
+  'delivery.manage': ['admin', 'manager'], // close trips (and record cash collected), cancel trips, delivery staff
   delete: ['admin'], // invoices, receipts, stock entries, customers, products, containers; reopen a received container
   users: ['admin'],
   settings: ['admin'],
