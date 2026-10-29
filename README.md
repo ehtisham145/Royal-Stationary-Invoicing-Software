@@ -245,7 +245,7 @@ The full list with status is in `docs/CHECKLIST.md`.
 ---
 Developer:
   
-  Senior AI Engineer + Software Developer: Ehtisham Malik
+  Senior AI Engineer + Software Developer : Ehtisham Malik
   
   
   Senior Software Engineer : Ali Raza
